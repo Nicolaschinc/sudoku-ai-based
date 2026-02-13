@@ -1,19 +1,26 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import "./App.css";
 import {
   createInitialBoard,
+  generateSudoku,
   isBoardComplete,
   isFixedCell,
   isValidPlacement,
   setCell,
   getCandidates,
 } from "./sudoku";
-import type { Board, CellValue } from "./sudoku";
+import type { Board, CellValue, Difficulty } from "./sudoku";
 import { requestSudokuHint } from "./kimiClient";
 
 function App() {
-  const initialBoard = useMemo(() => createInitialBoard(), []);
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [initialBoard, setInitialBoard] = useState<Board>(() =>
+    createInitialBoard("easy")
+  );
   const [board, setBoard] = useState<Board>(initialBoard);
+  const [notes, setNotes] = useState<Record<string, number[]>>({});
+  const [isNoteMode, setIsNoteMode] = useState<boolean>(false);
+
   const [selectedCell, setSelectedCell] = useState<{
     row: number;
     col: number;
@@ -23,6 +30,18 @@ function App() {
   const [aiLoading, setAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const startNewGame = (diff: Difficulty) => {
+    const newBoard = generateSudoku(diff);
+    setInitialBoard(newBoard);
+    setBoard(newBoard);
+    setNotes({});
+    setSelectedCell(null);
+    setStatus("");
+    setAiHint("");
+    setAiError("");
+    setDifficulty(diff);
+  };
 
   const handleCellClick = (row: number, col: number) => {
     if (isFixedCell(initialBoard, row, col)) {
@@ -40,29 +59,66 @@ function App() {
 
   const handleNumberInput = (value: number) => {
     if (!selectedCell) return;
+    const { row, col } = selectedCell;
+    const key = `${row}-${col}`;
 
-    const next = setCell(
-      board,
-      selectedCell.row,
-      selectedCell.col,
-      value as CellValue
-    );
-    setBoard(next);
+    if (isNoteMode) {
+      // Note Mode Logic
+      if (board[row][col] !== null) return; // Don't add notes if cell is filled
 
-    if (!isValidPlacement(next, selectedCell.row, selectedCell.col, value)) {
-      setStatus("该位置有冲突，请调整");
-    } else if (isBoardComplete(next)) {
-      setStatus("恭喜，你完成了这个数独！");
+      setNotes((prev) => {
+        const currentNotes = prev[key] || [];
+        const newNotes = currentNotes.includes(value)
+          ? currentNotes.filter((n) => n !== value)
+          : [...currentNotes, value].sort((a, b) => a - b);
+        
+        if (newNotes.length === 0) {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        }
+        return { ...prev, [key]: newNotes };
+      });
     } else {
-      setStatus("");
+      // Normal Mode Logic
+      const next = setCell(board, row, col, value as CellValue);
+      setBoard(next);
+
+      // Clear notes for this cell when a number is placed
+      setNotes((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+
+      if (!isValidPlacement(next, row, col, value)) {
+        setStatus("该位置有冲突，请调整");
+      } else if (isBoardComplete(next)) {
+        setStatus("恭喜，你完成了这个数独！");
+      } else {
+        setStatus("");
+      }
     }
   };
 
   const handleDelete = () => {
     if (!selectedCell) return;
-    const next = setCell(board, selectedCell.row, selectedCell.col, null);
-    setBoard(next);
-    setStatus("");
+    const { row, col } = selectedCell;
+    
+    // If there is a value, clear it
+    if (board[row][col] !== null) {
+      const next = setCell(board, row, col, null);
+      setBoard(next);
+      setStatus("");
+    } else {
+      // If no value, clear notes
+      const key = `${row}-${col}`;
+      setNotes((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
   };
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -94,7 +150,8 @@ function App() {
   };
 
   const handleReset = () => {
-    setBoard(createInitialBoard());
+    setBoard(initialBoard);
+    setNotes({});
     setSelectedCell(null);
     setStatus("");
     setAiHint("");
@@ -159,6 +216,23 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <h1>数独</h1>
+        <div className="game-controls">
+          <select
+            value={difficulty}
+            onChange={(e) => startNewGame(e.target.value as Difficulty)}
+            className="difficulty-select"
+          >
+            <option value="easy">简单</option>
+            <option value="medium">中等</option>
+            <option value="hard">困难</option>
+          </select>
+          <button
+            className="btn-new-game"
+            onClick={() => startNewGame(difficulty)}
+          >
+            新游戏
+          </button>
+        </div>
       </header>
 
       <main className="game-area">
@@ -180,6 +254,8 @@ function App() {
                     selectedCell && board[selectedCell.row][selectedCell.col];
                   const isSameValue =
                     selectedValue && value === selectedValue && value !== null;
+                  
+                  const cellNotes = notes[`${rowIndex}-${colIndex}`] || [];
 
                   const classNames = [
                     "cell",
@@ -203,7 +279,17 @@ function App() {
                       className={classNames}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
                     >
-                      {value ?? ""}
+                      {value !== null ? (
+                        <span>{value}</span>
+                      ) : (
+                        <div className="notes-grid">
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                            <div key={n} className="note-item">
+                              {cellNotes.includes(n) ? n : ""}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -225,6 +311,13 @@ function App() {
 
           <div className="action-buttons">
             <button
+              className={`btn-secondary ${isNoteMode ? "active-mode" : ""}`}
+              type="button"
+              onClick={() => setIsNoteMode(!isNoteMode)}
+            >
+              {isNoteMode ? "📝 笔记模式: 开" : "📝 笔记模式: 关"}
+            </button>
+            <button
               className="btn-secondary"
               type="button"
               onClick={handleReset}
@@ -241,6 +334,7 @@ function App() {
             </button>
           </div>
         </div>
+
         
         {/* Hidden input to trigger mobile keyboard */}
         <input

@@ -2,20 +2,82 @@ export type CellValue = number | null
 
 export type Board = CellValue[][]
 
-const puzzle: number[][] = [
-  [0, 0, 0, 2, 6, 0, 7, 0, 1],
-  [6, 8, 0, 0, 7, 0, 0, 9, 0],
-  [1, 9, 0, 0, 0, 4, 5, 0, 0],
-  [8, 2, 0, 1, 0, 0, 0, 4, 0],
-  [0, 0, 4, 6, 0, 2, 9, 0, 0],
-  [0, 5, 0, 0, 0, 3, 0, 2, 8],
-  [0, 0, 9, 3, 0, 0, 0, 7, 4],
-  [0, 4, 0, 0, 5, 0, 0, 3, 6],
-  [7, 0, 3, 0, 1, 8, 0, 0, 0],
-]
+export type Difficulty = 'easy' | 'medium' | 'hard'
 
-export function createInitialBoard(): Board {
-  return puzzle.map(row => row.map(value => (value === 0 ? null : value)))
+const BLANK: CellValue = null
+
+function getEmptyBoard(): Board {
+  return Array.from({ length: 9 }, () => Array(9).fill(BLANK))
+}
+
+function shuffle<T>(array: T[]): T[] {
+  const newArray = [...array]
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]]
+  }
+  return newArray
+}
+
+function solve(board: Board): boolean {
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (board[row][col] === BLANK) {
+        const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        for (const num of nums) {
+          if (isValidPlacement(board, row, col, num)) {
+            board[row][col] = num
+            if (solve(board)) return true
+            board[row][col] = BLANK
+          }
+        }
+        return false
+      }
+    }
+  }
+  return true
+}
+
+export function generateSudoku(difficulty: Difficulty = 'easy'): Board {
+  // 1. Start with an empty board
+  const board = getEmptyBoard()
+  
+  // 2. Fill it completely
+  solve(board)
+  
+  // 3. Remove numbers based on difficulty
+  // Clues count: Easy ~36-45, Medium ~30-35, Hard ~24-29
+  let cluesCount: number
+  switch (difficulty) {
+    case 'easy':
+      cluesCount = 40
+      break
+    case 'medium':
+      cluesCount = 32
+      break
+    case 'hard':
+      cluesCount = 25
+      break
+  }
+  
+  let attempts = 81 - cluesCount
+  while (attempts > 0) {
+    const row = Math.floor(Math.random() * 9)
+    const col = Math.floor(Math.random() * 9)
+    
+    if (board[row][col] !== BLANK) {
+      board[row][col] = BLANK
+      attempts--
+      // Note: Ideally we should check for unique solution here, 
+      // but for MVP we skip it to ensure performance.
+    }
+  }
+  
+  return board
+}
+
+export function createInitialBoard(difficulty: Difficulty = 'easy'): Board {
+  return generateSudoku(difficulty)
 }
 
 export function isFixedCell(initialBoard: Board, row: number, col: number): boolean {

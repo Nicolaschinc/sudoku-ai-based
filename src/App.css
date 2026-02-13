@@ -14,9 +14,9 @@
 
 .app-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 40px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -26,26 +26,86 @@
 
 .app-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.subtitle {
-  margin-top: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 1rem;
+.game-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 8px;
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+.difficulty-select {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background-color: rgba(0,0,0,0.04);
+  cursor: pointer;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 36px;
+}
+
+.difficulty-select:hover {
+  background-color: rgba(0,0,0,0.08);
+}
+
+.difficulty-select:focus {
+  background-color: white;
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+
+.btn-new-game {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent-blue);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+}
+
+.btn-new-game:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .game-area {
   display: flex;
   flex-direction: row;
-  gap: 40px;
+  gap: 60px;
   align-items: flex-start;
   justify-content: center;
   width: 100%;
@@ -53,18 +113,18 @@
 
 /* Board Styling */
 .board-container {
-  padding: 20px;
+  padding: 24px;
   background: var(--card-bg);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
 }
 
 .board {
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--board-border);
-  border-radius: 4px; /* Inner border radius usually sharp for grid */
+  border: 3px solid var(--board-border);
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -76,22 +136,32 @@
   width: var(--cell-size);
   height: var(--cell-size);
   border: 1px solid var(--cell-border);
-  border-right: none; /* Prevent double borders */
+  border-right: none;
   border-bottom: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: 400;
+  font-size: 1.6rem;
+  font-weight: 500;
   cursor: pointer;
   user-select: none;
   background-color: var(--cell-bg);
-  transition: background-color 0.15s ease;
+  transition: all 0.1s ease;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  color: var(--text-primary);
 }
 
-/* Fix right/bottom borders for the whole board */
+.cell span {
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Fix right/bottom borders */
 .cell:last-child {
   border-right: 1px solid var(--cell-border);
 }
@@ -101,8 +171,8 @@
 
 .cell-fixed {
   background-color: var(--cell-fixed-bg);
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: var(--board-border);
 }
 
 .cell-editable {
@@ -123,15 +193,29 @@
   border: 2px solid var(--accent-blue);
   z-index: 10;
   pointer-events: none;
+  animation: pulseBorder 2s infinite;
+}
+
+@keyframes pulseBorder {
+  0% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(0, 122, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); }
 }
 
 .cell-highlight {
-  background-color: rgba(0, 122, 255, 0.1);
+  background-color: rgba(0, 122, 255, 0.08);
 }
 
 .cell-conflict {
   background-color: var(--cell-conflict-bg);
   color: var(--accent-red);
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
 }
 
 .border-right-thick {
@@ -142,78 +226,105 @@
   border-bottom: 2px solid var(--subgrid-border) !important;
 }
 
+/* Notes Grid */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  pointer-events: none;
+}
+
+.note-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #757575;
+  font-weight: 500;
+  line-height: 1;
+}
+
 /* Controls Area */
 .controls-area {
   flex: 1;
-  max-width: 360px;
+  max-width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .status-area {
-  min-height: 60px;
+  min-height: 80px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
+  gap: 12px;
 }
 
 .status-message {
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: white;
   font-size: 0.95rem;
   color: var(--text-primary);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   animation: fadeIn 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ai-hint-msg {
-  background-color: #fff9e6; /* Soft yellow */
-  border: 1px solid #ffeeba;
-  color: #856404;
+  background-color: #fffde7;
+  border: 1px solid #fff9c4;
+  color: #f57f17;
+  font-weight: 500;
 }
 
 .ai-error-msg {
-  background-color: #fdecea;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
   color: var(--accent-red);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .action-buttons {
   display: flex;
   gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .action-buttons button {
   flex: 1;
-  padding: 14px 20px; /* Larger touch target */
-  border-radius: 14px;
+  padding: 16px 20px;
+  border-radius: 16px;
   border: none;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-primary {
-  background-color: var(--accent-blue);
+  background: linear-gradient(135deg, var(--accent-blue), #0062cc);
   color: white;
-  box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 122, 255, 0.25);
 }
 
 .btn-primary:hover {
-  background-color: #0062cc;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 122, 255, 0.3);
 }
 
 .btn-primary:active {
@@ -221,81 +332,97 @@
 }
 
 .btn-primary:disabled {
-  background-color: #a0cfff;
+  background: #a0cfff;
   cursor: wait;
+  box-shadow: none;
+  transform: none;
 }
 
 .btn-secondary {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: white;
   color: var(--text-primary);
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
 .btn-secondary:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: #f5f5f7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.active-mode {
+  background: var(--text-primary) !important;
+  color: white !important;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* Responsive Design */
-@media (max-width: 850px) {
+@media (max-width: 900px) {
   .game-area {
     flex-direction: column;
     align-items: center;
-    gap: 30px;
+    gap: 40px;
   }
 
   .controls-area {
     width: 100%;
-    max-width: 400px;
-    padding-bottom: 40px; /* Add bottom padding for scrolling */
+    max-width: 450px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  
+  .status-area {
+    width: 100%;
+    min-height: auto;
+  }
+  
+  .action-buttons {
+    width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   :root {
-    /* Calculate cell size to leave room for margins: (100vw - padding) / 9 */
-    /* Padding: 16px (app) + 16px (board container) + safety margin ~ 10px */
     --cell-size: 9.5vw;
   }
 
   .app-container {
-    padding: 10px 16px 20px 16px; /* Increased side padding */
-    min-height: 100dvh;
-    justify-content: flex-start; /* Ensure content starts from top */
+    padding: 10px 16px 30px;
   }
 
   .app-header {
-    margin-bottom: 1rem;
-    margin-top: 1rem; /* Slightly more top margin for breathing room */
+    margin-bottom: 2rem;
+    gap: 16px;
   }
   
   .app-header h1 {
-    font-size: 1.8rem;
-  }
-  
-  .subtitle {
-    font-size: 0.9rem;
+    font-size: 2rem;
   }
 
   .board-container {
-    padding: 8px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    background-color: #fff;
-    /* Ensure board doesn't touch edges if screen is very narrow */
-    max-width: 100%;
-    display: flex;
-    justify-content: center;
+    padding: 10px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
   }
 
   .cell {
-    font-size: 1.2rem; /* Slightly smaller font to fit */
+    font-size: 1.3rem;
   }
 
   .controls-area {
-    gap: 12px; /* Reduce gap between controls */
+    gap: 16px;
     margin-top: 10px;
   }
   
-  .status-area {
-    min-height: 40px; /* Compact status area */
+  .note-item {
+    font-size: 0.55rem;
+  }
+  
+  .action-buttons button {
+    padding: 12px 16px;
+    font-size: 0.9rem;
   }
 }
